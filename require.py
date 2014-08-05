@@ -117,17 +117,18 @@ def require(**requirements):
         specified requirement containing the exported instances.
     """
 
-    exports = {name: Export.load(requirement)
-               for name, requirement
-               in requirements.iteritems()}
+    # Load all exports as specified in the requirements
+    exports = {name: Export.load(requirements[name])
+               for name
+               in requirements}
 
     def wrapper(func):
         def wrapped(*args, **kwargs):
             # Populate the keyword arguments dicts passed to the wrapped
             # function with the required instances
-            kwargs.update({name: export.instance
-                           for name, export
-                           in exports.iteritems()
+            kwargs.update({name: exports[name].instance
+                           for name
+                           in exports
                            if name not in kwargs})
 
             # Call the wrapped function
