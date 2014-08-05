@@ -20,6 +20,7 @@ along with require. If not, see <http://www.gnu.org/licenses/>.
 import setuptools
 
 
+
 version = open('./VERSION').read().strip()
 
 setuptools.setup(
@@ -33,7 +34,7 @@ setuptools.setup(
 
     url = 'http://dev.open-desk.net/projects/require',
 
-    description = 'a framework for module definitions',
+    description = 'A framework for module definitions',
     long_description = open('README').read(),
     keywords = 'require module',
 
