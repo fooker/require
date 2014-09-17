@@ -20,14 +20,11 @@ along with require. If not, see <http://www.gnu.org/licenses/>.
 import setuptools
 
 
-
-version = open('./VERSION').read().strip()
-
 setuptools.setup(
     license = 'GNU GPLv3',
 
     name = 'require',
-    version = version,
+    version = '0.0.6',
 
     author = 'Dustin Frisch',
     author_email = 'fooker@lab.sh',
@@ -40,4 +37,6 @@ setuptools.setup(
 
     install_requires = [
     ],
+
+    
 )
