@@ -17,6 +17,9 @@ You should have received a copy of the GNU General Public License
 along with require.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import functools
+
+
 __all__ = ['require',
            'export',
            'extend']
@@ -110,39 +113,46 @@ class Export(object):
         return export
 
 
-def require(**requirements):
-    """ Decorator to inject requirements into a function.
+def require(requirement=None,
+            **requirements):
+    """ Factory for a function decorator or property accessor.
+        Decorator to inject requirements into a function.
 
-        The decorated function is called with a named argument for each
+        The property accessor is created by passing a single unnamed
+        requirement to the function.
+
+        The decorated function is returned if the first parameter is not set
+        and the keyword arguments are passed. The decorated function is wrapped
+        in a way that calls the wrapped function with a named argument for each
         specified requirement containing the exported instances.
     """
 
-    # Load all exports as specified in the requirements
-    exports = {name: Export.load(requirements[name])
-               for name
-               in requirements}
+    if requirement is not None:
+        return Export.load(requirement)
 
-    def wrapper(func):
-        def wrapped(*args, **kwargs):
-            # Populate the keyword arguments dicts passed to the wrapped
-            # function with the required instances
-            kwargs.update({name: exports[name].instance
-                           for name
-                           in exports
-                           if name not in kwargs})
+    else:
+        # Load all exports as specified in the requirements
+        exports = {name: Export.load(requirements[name])
+                   for name
+                   in requirements}
 
-            # Call the wrapped function
-            return func(*args,
-                        **kwargs)
 
-        # Copy properties from the wrapped function to the wrapper
-        wrapped.__module__ = func.__module__
-        wrapped.__name__ = func.__name__
-        wrapped.__qualname__ = func.__qualname__
-        wrapped.__doc__ = func.__doc__
+        def wrapper(self, func):
+            @functools.wraps(func)
+            def wrapped(*args, **kwargs):
+                # Populate the keyword arguments dicts passed to the wrapped
+                # function with the required instances
+                kwargs.update({name: self.__exports[name].instance
+                               for name
+                               in self.__exports
+                               if name not in kwargs})
 
-        return wrapped
-    return wrapper
+                # Call the wrapped function
+                return func(*args,
+                            **kwargs)
+
+            return wrapped
+        return wrapper
 
 
 def export(**requirements):

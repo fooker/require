@@ -24,7 +24,7 @@ setuptools.setup(
     license = 'GNU GPLv3',
 
     name = 'require',
-    version = '0.0.6',
+    version = '0.0.8',
 
     author = 'Dustin Frisch',
     author_email = 'fooker@lab.sh',
@@ -34,6 +34,8 @@ setuptools.setup(
     description = 'A framework for module definitions',
     long_description = open('README').read(),
     keywords = 'require module',
+
+    packages=['require'],
 
     install_requires = [
     ],
