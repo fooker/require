@@ -115,11 +115,11 @@ class Export(object):
 
 def require(requirement=None,
             **requirements):
-    """ Factory for a function decorator or property accessor.
+    """ Factory for a function decorator or property descriptor.
         Decorator to inject requirements into a function.
 
-        The property accessor is created by passing a single unnamed
-        requirement to the function.
+        The property is created by passing a single unnamed requirement to the
+        function and returns the required instance.
 
         The decorated function is returned if the first parameter is not set
         and the keyword arguments are passed. The decorated function is wrapped
@@ -127,24 +127,27 @@ def require(requirement=None,
         specified requirement containing the exported instances.
     """
 
-    if requirement is not None:
-        return Export.load(requirement)
+    if requirement:
+        # Load the export specified in the requirement
+        export = Export.load(requirement)
 
-    else:
+        return property(lambda inst: export.instance)
+
+    elif requirements:
         # Load all exports as specified in the requirements
         exports = {name: Export.load(requirements[name])
                    for name
                    in requirements}
 
 
-        def wrapper(self, func):
+        def wrapper(func):
             @functools.wraps(func)
             def wrapped(*args, **kwargs):
                 # Populate the keyword arguments dicts passed to the wrapped
                 # function with the required instances
-                kwargs.update({name: self.__exports[name].instance
+                kwargs.update({name: exports[name].instance
                                for name
-                               in self.__exports
+                               in exports
                                if name not in kwargs})
 
                 # Call the wrapped function
@@ -153,6 +156,10 @@ def require(requirement=None,
 
             return wrapped
         return wrapper
+
+    else:
+        # Assume a empty decorator function
+        return lambda func: func
 
 
 def export(**requirements):
