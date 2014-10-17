@@ -22,7 +22,10 @@ import functools
 
 __all__ = ['require',
            'export',
-           'extend']
+           'extend',
+           'oneshot',
+           'singleton']
+
 
 
 class Export(object):
@@ -36,11 +39,14 @@ class Export(object):
         extends are called after instance creation to manipulate the instance.
     """
 
-    def __init__(self, factory):
+    def __init__(self,
+                 factory,
+                 scope):
         self.__factory = factory
         self.__extenders = []
 
-        self.__instance = None
+        self.__proxy = scope(self)
+
 
     def extend(self, extender):
         """ Extends this export.
@@ -53,36 +59,49 @@ class Export(object):
             with the returned value.
         """
 
-        assert self.__instance is None
-
         self.__extenders.append(extender)
+
+
+    def __call__(self):
+        """ Creates a new instance.
+
+            The instance is created by calling the exported factory and
+            applying all extenders in the order of registration.
+        """
+
+        # Lazily create the instance by calling the factory
+        instance = self.__factory()
+
+        # Call all extenders for this export to update or replace the instance
+        for extender in self.__extenders:
+            extended = extender(instance)
+
+            # If the extender returned a not-none value, the instance is
+            # replaced with the returned value
+            if extended is not None:
+                instance = extended
+
+        return instance
+
 
     @property
     def instance(self):
         """ Returns the instance.
-
-            If no instance exists, it is created as described above.
         """
 
-        # Create an instance none is available
-        if self.__instance is None:
+        return self.__proxy()
 
-            # Lazily create the instance by calling the factory
-            instance = self.__factory()
+    #
+    #     # Create an instance none is available
+    #     if self.__instance is None:
+    #
+    #
+    #
+    #         # Remember the instance for further requisition
+    #         self.__instance = instance
+    #
+    #     return self.__instance
 
-            # Call all extenders for this export to update or replace the instance
-            for extender in self.__extenders:
-                extended = extender(instance)
-
-                # If the extender returned a not-none value, the instance is
-                # replaced with the returned value
-                if extended is not None:
-                    instance = extended
-
-            # Remember the instance for further requisition
-            self.__instance = instance
-
-        return self.__instance
 
     @staticmethod
     def load(requirement):
@@ -113,6 +132,24 @@ class Export(object):
         return export
 
 
+
+def oneshot(export):
+    return export
+
+
+
+def singleton(export):
+    def wrapper():
+        if wrapper.instance is None:
+            wrapper.instance = export()
+
+        return wrapper.instance
+    wrapper.instance = None
+
+    return wrapper
+
+
+
 def require(requirement=None,
             **requirements):
     """ Factory for a function decorator or property descriptor.
@@ -131,6 +168,7 @@ def require(requirement=None,
         # Load the export specified in the requirement
         export = Export.load(requirement)
 
+        # Build a property accessor returning the required instance
         return property(lambda inst: export.instance)
 
     elif requirements:
@@ -138,7 +176,6 @@ def require(requirement=None,
         exports = {name: Export.load(requirements[name])
                    for name
                    in requirements}
-
 
         def wrapper(func):
             @functools.wraps(func)
@@ -162,7 +199,9 @@ def require(requirement=None,
         return lambda func: func
 
 
-def export(**requirements):
+
+def export(scope=singleton,
+           **requirements):
     """ Decorator to export a factory.
 
         Requirements for the factory can be specified. These requirements are
@@ -170,19 +209,25 @@ def export(**requirements):
     """
 
     def wrapper(func):
-        return Export(factory = require(**requirements)(func))
+        return Export(factory=require(**requirements)(func),
+                      scope=scope)
 
     return wrapper
 
 
-def extend(requirement):
+
+def extend(requirement,
+           **requirements):
     """ Decorator to extend a export.
 
         The decorated function is used to extend the export specified by the given
         name.
+
+        Requirements for the factory can be specified. These requirements are
+        passed to the wrapped function as specified by the `require` decorator.
     """
 
     def wrapper(func):
-        Export.load(requirement).extend(extender = func)
+        Export.load(requirement).extend(extender=require(**requirements)(func))
 
     return wrapper
