@@ -61,6 +61,8 @@ class Export(object):
 
         self.__extenders.append(extender)
 
+        return extender
+
 
     def __call__(self):
         """ Creates a new instance.
@@ -90,17 +92,6 @@ class Export(object):
         """
 
         return self.__proxy()
-
-    #
-    #     # Create an instance none is available
-    #     if self.__instance is None:
-    #
-    #
-    #
-    #         # Remember the instance for further requisition
-    #         self.__instance = instance
-    #
-    #     return self.__instance
 
 
     @staticmethod
@@ -134,11 +125,22 @@ class Export(object):
 
 
 def oneshot(export):
+    """ Scope 'oneshot'.
+
+        The scope does not apply any caching or reusing of exported objects.
+        Each request for en export wil recreate the exported object.
+    """
     return export
 
 
 
 def singleton(export):
+    """ Scope 'singleton'.
+
+        The singleton scope ensures, that only one single instance exists
+        during application life-time. The instance is created on first request
+        and cached for later use.
+    """
     def wrapper():
         if wrapper.instance is None:
             wrapper.instance = export()
@@ -228,6 +230,6 @@ def extend(requirement,
     """
 
     def wrapper(func):
-        Export.load(requirement).extend(extender=require(**requirements)(func))
+        return Export.load(requirement).extend(extender=require(**requirements)(func))
 
     return wrapper

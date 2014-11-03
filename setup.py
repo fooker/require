@@ -24,7 +24,7 @@ setuptools.setup(
     license = 'GNU GPLv3',
 
     name = 'require',
-    version = '0.0.10',
+    version = '0.0.11',
 
     author = 'Dustin Frisch',
     author_email = 'fooker@lab.sh',
