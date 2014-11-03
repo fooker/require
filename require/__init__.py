@@ -45,7 +45,7 @@ class Export(object):
         self.__factory = factory
         self.__extenders = []
 
-        self.__proxy = scope(self)
+        self.__proxy = scope(self.create)
 
 
     def extend(self, extender):
@@ -65,6 +65,13 @@ class Export(object):
 
 
     def __call__(self):
+        """ Returns an instance of this export.
+        """
+
+        return self.__proxy()
+
+
+    def create(self):
         """ Creates a new instance.
 
             The instance is created by calling the exported factory and
@@ -76,6 +83,10 @@ class Export(object):
 
         # Call all extenders for this export to update or replace the instance
         for extender in self.__extenders:
+            # If the extender is an export, instantiate it
+            if isinstance(extender, Export):
+                extender = extender()
+
             extended = extender(instance)
 
             # If the extender returned a not-none value, the instance is
@@ -84,14 +95,6 @@ class Export(object):
                 instance = extended
 
         return instance
-
-
-    @property
-    def instance(self):
-        """ Returns the instance.
-        """
-
-        return self.__proxy()
 
 
     @staticmethod
@@ -171,7 +174,7 @@ def require(requirement=None,
         export = Export.load(requirement)
 
         # Build a property accessor returning the required instance
-        return property(lambda inst: export.instance)
+        return property(lambda inst: export())
 
     elif requirements:
         # Load all exports as specified in the requirements
@@ -184,7 +187,7 @@ def require(requirement=None,
             def wrapped(*args, **kwargs):
                 # Populate the keyword arguments dicts passed to the wrapped
                 # function with the required instances
-                kwargs.update({name: exports[name].instance
+                kwargs.update({name: exports[name]()
                                for name
                                in exports
                                if name not in kwargs})
