@@ -54,7 +54,7 @@ def mock(requirement):
                 with unittest.mock.patch.object(export, 'create',
                                                 unittest.mock.Mock(name='mocked:%s' % requirement)) as mocked:
                     # Modify the mocked factory function
-                    mocker(mocked.return_value)
+                    mocker(mocked)
 
                     # Call the wrapped function with the patch in place
                     return func(*args, **kwargs)
