@@ -45,7 +45,10 @@ class Export(object):
         self.__factory = factory
         self.__extenders = []
 
-        self.__proxy = scope(self.create)
+        # Build a factory proxy by binding the factory function to the scope
+        # function wrapper (this uses late binding allowing the create function
+        # to be mocked for testing)
+        self.__proxy = scope(lambda: self.create())
 
 
     def extend(self, extender):
