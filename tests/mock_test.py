@@ -30,8 +30,8 @@ class MockTestCase(unittest.TestCase):
         @module.export(name='export',
                        scope=singleton)
         def exported():
-            class Export():
-                def get(self):
+            class Export(object):
+                def get(me):
                     return "test"
             return Export()
 
