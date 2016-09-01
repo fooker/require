@@ -1,5 +1,5 @@
 """
-Copyright 2013 Dustin Frisch<fooker@lab.sh>
+Copyright 2016 Dustin Frisch<fooker@lab.sh>
 
 This file is part of require.
 
