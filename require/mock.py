@@ -17,10 +17,7 @@ You should have received a copy of the GNU General Public License
 along with require.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from require import Export
-
 import unittest.mock
-
 import functools
 
 
@@ -28,22 +25,23 @@ __all__ = ['mock']
 
 
 
-def mock(requirement):
+def mock(module, requirement):
     """ Mocks an export.
 
-        The instance created by the factory function of the export specified by
-        the given requirement is patched with a unittest.mock.Mock instance.
+        The export specified by the passed requirement is patched to create a
+        unittest.mock.Mock instance instead of the using the original factory.
 
         The Mock instance is passed to the decorated function as its only
-        parameter for further modification.
+        parameter for further modification every time an instance is created.
+        This function can modify the mock in any way.
 
         The decorated function acts as a decorator itself. Each function
-        decorated with this method uses the patched version of the factory
-        function instead of the real one.
+        decorated with it will use the patched version of the export instead of
+        the real one.
     """
 
     # Find the export to mock
-    export = Export.load(requirement)
+    export = module.load(requirement)
 
     def wrapper(mocker):
         @functools.wraps(mocker)
@@ -54,7 +52,7 @@ def mock(requirement):
                 with unittest.mock.patch.object(export, 'create',
                                                 unittest.mock.Mock(name='mocked:%s' % requirement)) as mocked:
                     # Modify the mocked factory function
-                    mocker(mocked)
+                    mocker(mocked())
 
                     # Call the wrapped function with the patch in place
                     return func(*args, **kwargs)
